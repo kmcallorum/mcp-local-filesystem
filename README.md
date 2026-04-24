@@ -20,7 +20,7 @@ One command. Zero friction. Files land exactly where they belong.
 
 ## Features
 
-- **4 filesystem tools** — `write_file`, `read_file`, `list_directory`, `check_allowed`
+- **6 filesystem tools** — `write_file`, `read_file`, `list_directory`, `check_allowed`, `read_binary`, `write_binary`
 - **Path sandboxing** — all operations are restricted to explicitly allowed directories
 - **Auto-directory creation** — `write_file` creates parent directories on the fly
 - **stdio transport only** — runs as a local child process, never opens a port
@@ -141,6 +141,21 @@ Checks whether a path falls within the allowed directories. Does not require the
 { "allowed": true, "normalizedPath": "/Users/you/Projects/app/src/main.ts" }
 ```
 
+### `read_binary` / `write_binary` — for binary files
+
+For any file where byte-exact preservation matters (pdf, docx, pptx, xlsx,
+png, jpg, zip, compiled/encoded formats), use `read_binary` and `write_binary`.
+
+These tools base64-encode the file content over the JSON transport, avoiding
+the UTF-8 corruption that would happen with `read_file` / `write_file` on a
+binary file.
+
+- **read_binary** — returns `content` as a base64 string plus `bytesRead`
+- **write_binary** — takes a base64-encoded `content` string, decodes and writes raw bytes
+
+For plain text files (md, txt, json, ts, py, rego), keep using `read_file`
+and `write_file` — they are more efficient (no base64 overhead).
+
 ## Security Model
 
 Security is non-negotiable. Every filesystem operation goes through path validation before execution.
@@ -199,7 +214,7 @@ You can run multiple MCP servers side by side — just add more entries to `mcpS
 ```bash
 npm run build        # Compile TypeScript → dist/
 npm run dev          # Watch mode — recompiles on save
-npm test             # Run all 38 tests
+npm test             # Run all 44 tests
 npm run inspector    # Launch MCP Inspector UI at http://localhost:6274
 ```
 
@@ -214,9 +229,12 @@ src/
     read-file.ts           # read_file implementation
     list-directory.ts      # list_directory implementation
     check-allowed.ts       # check_allowed implementation
+    read-binary.ts         # read_binary implementation (base64, byte-exact)
+    write-binary.ts        # write_binary implementation (base64, byte-exact)
 tests/
   config.test.ts           # 22 unit tests — config loading, path validation
-  tools.test.ts            # 16 integration tests — all 4 tools
+  tools.test.ts            # 16 integration tests — all 4 text tools
+  binary.test.ts           # 6 integration tests — binary round-trip
 config.json                # Allowed directories configuration
 dist/                      # Compiled output (git-ignored)
 ```

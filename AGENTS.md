@@ -107,6 +107,23 @@ Claude Web browser session, and Jr. terminal on a Mac Mini.
 - Returns: { allowed: boolean, normalizedPath: string }
 - Never errors — always returns a result
 
+### read_binary
+- Parameters: path (string)
+- Validates path against allowedDirectories
+- Reads file as raw bytes, returns content base64-encoded
+- For binary files: pdf, docx, pptx, xlsx, png, jpg, zip, compiled/encoded formats
+- Returns: { success: true, content: string (base64), path: string, bytesRead: number }
+- Error: { success: false, error: string }
+
+### write_binary
+- Parameters: path (string), content (base64-encoded string)
+- Validates path against allowedDirectories
+- Decodes base64 input and writes raw bytes
+- Auto-creates parent directories
+- For binary files: pdf, docx, pptx, xlsx, png, jpg, zip, compiled/encoded formats
+- Returns: { success: true, path: string, bytesWritten: number }
+- Error: { success: false, error: string }
+
 ## Configuration
 
 config.json format:
@@ -192,13 +209,20 @@ Each phase is complete when:
       Include troubleshooting section for common issues.
       Status: Complete
 
-## Current State (2026-03-09)
-- All 5 phases COMPLETE
-- 38 tests passing (22 config + 16 tools)
+- [x] Phase 6: Binary file support (v1.1.0)
+      Add read_binary and write_binary tools for byte-exact preservation
+      of pdf/docx/pptx/png/zip/etc. via base64 encoding.
+      Existing read_file/write_file unchanged for backward compatibility.
+      Tests: round-trip all 256 byte values, preserve zip magic bytes,
+      reject out-of-scope paths, auto-mkdir on write.
+      Status: Complete — built by Jr. on 2026-04-24 from Chief's brief.
+
+## Current State (2026-04-24 — v1.1.0)
+- 6 tools complete: read_file, write_file, list_directory, check_allowed, read_binary, write_binary
+- 44 tests passing (22 config + 16 tools + 6 binary round-trip)
 - Clean TypeScript compile, zero errors
-- MCP Inspector verified — all 4 tools visible on localhost:6274
-- NOT yet wired into Claude Desktop config
-- NOT yet committed to git (no git repo initialized)
+- Wired into Claude Desktop config
+- Binary path preserves bytes losslessly via base64 encoding
 
 ## Remaining Steps
 - [ ] Wire into Claude Desktop claude_desktop_config.json

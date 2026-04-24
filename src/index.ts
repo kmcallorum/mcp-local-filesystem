@@ -6,13 +6,15 @@ import { writeFile } from './tools/write-file.js';
 import { readFile } from './tools/read-file.js';
 import { listDirectory } from './tools/list-directory.js';
 import { checkAllowed } from './tools/check-allowed.js';
+import { readBinary } from './tools/read-binary.js';
+import { writeBinary } from './tools/write-binary.js';
 
 const config = loadConfig();
 const allowedDirs = config.allowedDirectories;
 
 const server = new McpServer({
   name: 'local-filesystem',
-  version: '1.0.0',
+  version: '1.1.0',
 });
 
 server.tool(
@@ -66,6 +68,35 @@ server.tool(
   },
   async ({ path }) => {
     const result = checkAllowed(path, allowedDirs);
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+    };
+  }
+);
+
+server.tool(
+  'write_binary',
+  'Write base64-encoded content to a file as raw bytes on the local filesystem. Auto-creates parent directories. Use this for any file where byte-exact preservation matters: pdf, docx, pptx, xlsx, png, jpg, zip, or any compiled/encoded format. For plain text files (md, txt, json, ts, py), use write_file instead.',
+  {
+    path: z.string().describe('Absolute path to the file to write'),
+    content: z.string().describe('Base64-encoded binary content'),
+  },
+  async ({ path, content }) => {
+    const result = await writeBinary(path, content, allowedDirs);
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+    };
+  }
+);
+
+server.tool(
+  'read_binary',
+  'Read a file from the local filesystem and return its content as base64-encoded bytes. Use this for any file where byte-exact preservation matters: pdf, docx, pptx, xlsx, png, jpg, zip, or any compiled/encoded format. For plain text files (md, txt, json, ts, py), use read_file instead.',
+  {
+    path: z.string().describe('Absolute path to the file to read'),
+  },
+  async ({ path }) => {
+    const result = await readBinary(path, allowedDirs);
     return {
       content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
     };
