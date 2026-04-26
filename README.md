@@ -20,7 +20,7 @@ One command. Zero friction. Files land exactly where they belong.
 
 ## Features
 
-- **6 filesystem tools** — `write_file`, `read_file`, `list_directory`, `check_allowed`, `read_binary`, `write_binary`
+- **7 filesystem tools** — `write_file`, `read_file`, `list_directory`, `check_allowed`, `read_binary`, `write_binary`, `str_replace`
 - **Path sandboxing** — all operations are restricted to explicitly allowed directories
 - **Auto-directory creation** — `write_file` creates parent directories on the fly
 - **stdio transport only** — runs as a local child process, never opens a port
@@ -156,6 +156,40 @@ binary file.
 For plain text files (md, txt, json, ts, py, rego), keep using `read_file`
 and `write_file` — they are more efficient (no base64 overhead).
 
+### `str_replace`
+
+Replaces a single, unique occurrence of `old_str` with `new_str` in a UTF-8
+text file. Use this for partial edits — changing a date, fixing a line, deleting
+a block — when rewriting the whole file with `write_file` would be wasteful.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `path` | string | Absolute path to the file to edit |
+| `old_str` | string | Exact substring to find — must match verbatim and uniquely |
+| `new_str` | string | Replacement text. Empty string deletes the match. |
+| `description` | string (optional) | Human-readable reason for the edit, for logging |
+
+**Behavior:**
+- 0 matches → error: `old_str not found in file`
+- 2+ matches → error with match count; add surrounding context to disambiguate
+- exactly 1 match → replaced and written back
+- non-UTF-8 (binary) file → rejected with a hint to use `write_binary`
+
+**Success response:**
+```json
+{
+  "success": true,
+  "path": "/Users/you/Projects/app/AGENTS.md",
+  "matchLine": 2,
+  "preview": "1: # AGENTS.md\n2: **Last Updated:** 2026-04-26\n3: \n4: body"
+}
+```
+
+**Error response (ambiguous match):**
+```json
+{ "success": false, "error": "old_str matches 3 times, must be unique. Add surrounding context to disambiguate." }
+```
+
 ## Security Model
 
 Security is non-negotiable. Every filesystem operation goes through path validation before execution.
@@ -231,10 +265,12 @@ src/
     check-allowed.ts       # check_allowed implementation
     read-binary.ts         # read_binary implementation (base64, byte-exact)
     write-binary.ts        # write_binary implementation (base64, byte-exact)
+    str-replace.ts         # str_replace implementation (unique-match partial edit)
 tests/
   config.test.ts           # 22 unit tests — config loading, path validation
   tools.test.ts            # 16 integration tests — all 4 text tools
   binary.test.ts           # 6 integration tests — binary round-trip
+  str-replace.test.ts      # 8 integration tests — str_replace match/error cases
 config.json                # Allowed directories configuration
 dist/                      # Compiled output (git-ignored)
 ```
