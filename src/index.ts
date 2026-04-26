@@ -8,6 +8,7 @@ import { listDirectory } from './tools/list-directory.js';
 import { checkAllowed } from './tools/check-allowed.js';
 import { readBinary } from './tools/read-binary.js';
 import { writeBinary } from './tools/write-binary.js';
+import { strReplace } from './tools/str-replace.js';
 
 const config = loadConfig();
 const allowedDirs = config.allowedDirectories;
@@ -97,6 +98,23 @@ server.tool(
   },
   async ({ path }) => {
     const result = await readBinary(path, allowedDirs);
+    return {
+      content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
+    };
+  }
+);
+
+server.tool(
+  'str_replace',
+  'Replace a single, unique occurrence of old_str with new_str in a UTF-8 text file. Errors if old_str is not found, or if it matches more than once (add surrounding context to disambiguate). Use this for partial edits when rewriting the whole file with write_file would be wasteful. For binary files, use write_binary.',
+  {
+    path: z.string().describe('Absolute path to the file to edit'),
+    old_str: z.string().describe('Exact substring to find — must match verbatim and uniquely'),
+    new_str: z.string().describe('Replacement text. Empty string deletes the match.'),
+    description: z.string().optional().describe('Optional human-readable reason for the edit, for logging'),
+  },
+  async ({ path, old_str, new_str, description }) => {
+    const result = await strReplace(path, old_str, new_str, allowedDirs, description);
     return {
       content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
     };
