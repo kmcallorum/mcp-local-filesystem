@@ -9,10 +9,14 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
   },
-  "keywords": ["mcp", "filesystem", "claude"],
+  "keywords": [
+    "mcp",
+    "filesystem",
+    "claude"
+  ],
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0"
+    "@modelcontextprotocol/sdk": "1.29.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
